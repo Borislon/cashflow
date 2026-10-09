@@ -41,7 +41,7 @@ export const AuthContextProvider = ({children}) => {
     
     useEffect(() => {
         supabase.auth.getSession().then(({ data: {session}}) => {
-            serSession(session);
+            setSession(session);
         });
 
         supabase.auth.onAuthStateChange((_event, session) => {
