@@ -1,5 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { UserAuth } from "../context/AuthContext";
 
 const Signup = ( ) => {
@@ -8,8 +8,25 @@ const Signup = ( ) => {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState("");
 
-    const { session } = UserAuth();
+    const { session, signUpNewUser } = UserAuth();
+    const navigate = useNavigate();
     console.log(session);
+
+    const handleSignUp = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try{
+            const result = await signUpNewUser(email, password)
+
+            if(result.success){
+                navigate('/dashboard');
+            } 
+        } catch(err) {
+                setError("an error occured");
+            } finally {
+                setLoading(false);
+            }
+    };
 
     return (
         <div>
