@@ -1,70 +1,69 @@
-import { createContext, useEffect, useState, useContext, Children} from "react";
-import { supabase } from "../supabaseClient";
-import { __unstable__loadDesignSystem } from "tailwindcss";
+import { createContext, useEffect, useState, useContext } from "react";
+import { supabase } from "../lib/supabase";
 
-const AuthContext = createContext()
+const AuthContext = createContext();
 
-export const AuthContextProvider = ({children}) => {
-    const [session, setSession] = useState(undefined)
+export const AuthContextProvider = ({ children }) => {
+  const [session, setSession] = useState(undefined);
 
-    //Sign up
-    const signUpNewUser = async (email, password) => {
-        const {data, error} = await supabase.auth.signUp({
-            email: email,
-            password: password,
-        });
+  const signUpNewUser = async (email, password, displayName) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: displayName,
+        },
+      },
+    });
 
-        if(error) {
-            console.error("there was a problem signing up: ", error)
-            return {success: false, error};
-        }
-        return {success: true, data};
-    };
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, data };
+  };
 
-    //Sign in
-    const signInUser = async (email, password) => {
-        try {
-            const {data, error} = await supabase.auth.signInWithPassword({
-                email: email,
-                password: password
-            });
-            if(error){
-                console.error("Sign in error occured: ", error);
-                return { success: false, error: error.message };
-            }
-            console.log("sign-in success: ", data);
-            return { success: true, data };
-        } catch(error){
-            console.error("An error occured: ", error);
-        }
-    };
-    
-    useEffect(() => {
-        supabase.auth.getSession().then(({ data: {session}}) => {
-            setSession(session);
-        });
+  const signInUser = async (email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
 
-        supabase.auth.onAuthStateChange((_event, session) => {
-            setSession(session);
-        });
-    },[]);
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true, data };
+  };
 
-    //Sign out
-    const signOut = () => {
-        const { error } = supabase.auth.signOut();
-        if(error) {
-            console.error("There was an error: ", error);
-        }
-    };
+  const signOut = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      return { success: false, error: error.message };
+    }
+    return { success: true };
+  };
 
-    return (
-        <AuthContext.Provider value={{session, signUpNewUser, signInUser, signOut}}>
-            {children}
-        </AuthContext.Provider>
-    )
-}
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
 
-export const UserAuth = () => {
-    return useContext(AuthContext);
-}
+    return () => subscription.unsubscribe();
+  }, []);
+
+  return (
+    <AuthContext.Provider
+      value={{ session, signUpNewUser, signInUser, signOut }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const UserAuth = () => useContext(AuthContext);

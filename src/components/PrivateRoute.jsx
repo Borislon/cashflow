@@ -1,15 +1,18 @@
-import React from 'react'
-import { UserAuth } from '../context/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from "react-router-dom";
+import { UserAuth } from "../context/AuthContext";
 
-const PrivateRoute = ({children}) => {
-    const {session} = UserAuth();
+const PrivateRoute = ({ children }) => {
+  const { session } = UserAuth();
 
-    if (session === undefined){
-        return <p>Loading. . .</p>
-    }
+  if (session === undefined) {
+    return <p className="p-6 text-center text-slate-600">Зареждане…</p>;
+  }
 
-    return <>{session ? <>{children}</> : <Navigate to="/signup"/>}</>;
-}
+  if (!session) {
+    return <Navigate to="/signin" replace />;
+  }
+
+  return children;
+};
 
 export default PrivateRoute;
